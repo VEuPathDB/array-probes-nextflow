@@ -90,13 +90,38 @@ process sam2bam {
 }
 
 
-process bowtieMapping {
+process bowtie2Index {
     container "quay.io/biocontainers/bowtie2:2.5.4--he96a11b_5"
 
-    //TODO
+input:
+    path fasta
+    
+    output:
+    path "bowtie2_db"
+    val  "bowtie2_db"
+    
+    script:
+    """
+    bowtie2_build $fasta bowtie2_db
+    """
 
 }
 
+process bowtie2Mapping {
+    container "quay.io/biocontainers/bowtie2:2.5.4--he96a11b_5"
+
+input:
+    path bowtie2DB
+    path fastaSubset
+
+    output:
+    path probes.sam  
+        
+    script:
+    """ 
+    bowtie2 --rg-id EuP --rg 'SM:TU114' --rg 'PL:Illumina'  -x $bowtie2_db -U $fastaSubset -S probes.sam) >& bowtie.log
+    """ 
+}
 
 
 workflow {
@@ -113,7 +138,12 @@ workflow {
     }
     else {
 
-        //bowtie2-build  $inputFile $outputIndexDir"
+        bowtie2Db = bowtie2Index(params.genomeFasta)
+
+	bowtieSubest = bowtie2Mapping(fastaSubset, bowtie2Db)
+
+	sam2bam(bowtieSubset.collectFile(name: "merged.sam"))
+
 
         //  $cmd = "($bowtie2 --rg-id EuP --rg 'SM:TU114' --rg 'PL:Illumina' ";
         //if ($extraBowtieParams){$cmd = $cmd.$extraBowtieParams;}
