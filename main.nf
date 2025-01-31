@@ -98,7 +98,7 @@ process bowtie2Index {
     val  db
 
     output:
-    path 'db.*' 
+    path "${db}.*" 
     
     script:
     """
