@@ -141,7 +141,7 @@ workflow {
 
         bowtie2Db = bowtie2Index(params.genomeFasta,params.db)
 
-	bowtieSubest = bowtie2Mapping(fastaSubset, params.db)
+	bowtieSubset = bowtie2Mapping(fastaSubset, params.db)
 
 	sam2bam(bowtieSubset.collectFile(name: "merged.sam"))
 
