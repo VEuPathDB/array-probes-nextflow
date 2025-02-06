@@ -99,10 +99,11 @@ process bowtie2Index {
 
     output:
     path "${db}.*" 
-    
+    val "bowtie_db"
+
     script:
     """
-    bowtie2_build $fasta $db
+    bowtie2-build $fasta $db
     """
 
 }
@@ -111,15 +112,15 @@ process bowtie2Mapping {
     container "quay.io/biocontainers/bowtie2:2.5.4--he96a11b_5"
 
 input:
-    val  dbname
     path fastaSubset
+    val  dbname
 
     output:
-    path probes.sam  
+    path "probes.sam"  
         
     script:
     """ 
-    bowtie2 --rg-id EuP --rg 'SM:TU114' --rg 'PL:Illumina'  -x $dbname -U $fastaSubset -S probes.sam) >& bowtie.log
+    bowtie2  -x $dbname -f -U $fastaSubset -S probes.sam
     """ 
 }
 
