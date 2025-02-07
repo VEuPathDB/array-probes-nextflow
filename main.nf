@@ -95,15 +95,15 @@ process bowtie2Index {
 
     input:
     path fasta
-    val  db
+    val  indexBaseName
 
     output:
-    path "${db}.*" 
-    val "bowtie_db"
+    path "${indexBaseName}.*"
+
 
     script:
     """
-    bowtie2-build $fasta $db
+    bowtie2-build $fasta $indexBaseName
     """
 
 }
@@ -113,6 +113,7 @@ process bowtie2Mapping {
 
 input:
     path fastaSubset
+    path indexFiles
     val  dbname
 
     output:
@@ -140,17 +141,13 @@ workflow {
     }
     else {
 
-        bowtie2Db = bowtie2Index(params.genomeFasta,params.db)
+        indexName = "index"
 
-	bowtieSubset = bowtie2Mapping(fastaSubset, params.db)
+        bowtie2Db = bowtie2Index(params.genomeFasta, indexName)
 
-	sam2bam(bowtieSubset.collectFile(name: "merged.sam"))
+	    bowtieSubset = bowtie2Mapping(fastaSubset, bowtie2Db, indexName)
 
-
-        //$cmd = "($bowtie2 --rg-id EuP --rg 'SM:TU114' --rg 'PL:Illumina' ";
-        //if ($extraBowtieParams){$cmd = $cmd.$extraBowtieParams;}
-        //$cmd = $cmd." -x $bowtieIndex ".(-e "$mateB" ? "-1 $mateA -2 $mateB " : "-U $mateA ")."-S $workingDir/$tmpOut.sam) >& $workingDir/bowtie.log";
-        //sam2bam(resultSubset.collectFile(name: "merged.sam"))
+        sam2bam(bowtieSubset.collectFile(name: "merged.sam"))
     }
 }
 
