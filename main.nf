@@ -138,6 +138,23 @@ workflow {
 
         sam2bam(resultSubset.collectFile(name: "merged.sam"))
 
+        // IF Stranded (params.makeCdf == true) NOTE:  may need to play around with the htseq commands
+        //htseq-count -a 0 --format=bam --order=name --stranded=yes --type=exon --idattr=gene_id --mode=union BAM_FILE params.gtfFile
+        // ELSE
+        // htseq-count -a 0 --format=bam --order=name --stranded=no --type=exon --idattr=gene_id --mode=union BAM_FILE .bam params.gtfFile
+
+        // TODO: geneToProbeMapping (output geneToProbeMapping file)
+
+//        if(params.makeCdfFile) {
+            //$MIN_PROBES=3
+            //my $cmd1 = "makePbaseTbase.pl probes.fsa $workflowDataDir/pbase-tbase.out";
+            //my $cmd2 = "makeCdfHeader.pl  --outPutFile $outputCdfFile --gene2probes $gene2probesFile --name $name --rows params.arrayRows --cols  params.arrayColumns --minProbes $MIN_PROBES";
+            //my $cmd3 = "create_cdf.pl $workflowDataDir/$outputCdfFile $workflowDataDir/$gene2probesInputFile $workflowDataDir/pbase-tbase.out $MIN_PROBES";
+//        }
+//        if(params.makeNdfFile) {
+            // my $cmd = "recreate_ndf.pl --original_ndf_file $workflowDataDir/$ndfFile --gene_to_oligo_file $workflowDataDir/$gene2probesInputFile --output_file $workflowDataDir/$outputFile";
+//        }
+
     }
     else {
 
@@ -145,7 +162,7 @@ workflow {
 
         bowtie2Db = bowtie2Index(params.genomeFasta, indexName)
 
-	    bowtieSubset = bowtie2Mapping(fastaSubset, bowtie2Db, indexName)
+        bowtieSubset = bowtie2Mapping(fastaSubset, bowtie2Db, indexName)
 
         sam2bam(bowtieSubset.collectFile(name: "merged.sam"))
     }
