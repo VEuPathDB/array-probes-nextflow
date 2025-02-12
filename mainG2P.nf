@@ -186,12 +186,16 @@ workflow {
 
         sam2bam(resultSubset.collectFile(name: "merged.sam"))
 
-        // IF Stranded (params.makeCdf == true) NOTE:  may need to play around with the htseq commands
-        //htseq-count -a 0 --format=bam --order=name --stranded=yes --type=exon --idattr=gene_id --mode=union BAM_FILE params.gtfFile
-        // ELSE
-        // htseq-count -a 0 --format=bam --order=name --stranded=no --type=exon --idattr=gene_id --mode=union BAM_FILE .bam params.gtfFile
+        // IF Stranded (params.makeCdf == true) 
 
         // TODO: geneToProbeMapping (output geneToProbeMapping file)
+
+	probeBed = probeGeneIntersect(sam2bam.out, params.gtfFile) 
+
+	gene2probe = bed2Tab(probeBed)
+
+	geneProbeHash = hashGene2probe(gene2probe,"gene2probe.py")
+
 
 //        if(params.makeCdfFile) {
             //$MIN_PROBES=3
