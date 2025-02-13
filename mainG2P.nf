@@ -111,7 +111,7 @@ process bowtie2Index {
 process bowtie2Mapping {
     container "quay.io/biocontainers/bowtie2:2.5.4--he96a11b_5"
 
-input:
+    input:
     path fastaSubset
     path indexFiles
     val  dbname
@@ -127,13 +127,14 @@ input:
 
 
 process probeGeneIntersect {
-
+    container "quay.io/biocontainers/bedtools:2.27.1--h077b44d_9"
+    
     input:
-      path probes.bam
-      path genome.gff
+    path probes.bam
+    path genome.gff
 
     output:
-      path "probes.bed"
+    path "probes.bed"
 
     script:
     """
@@ -141,9 +142,9 @@ process probeGeneIntersect {
     """
 }
 
-
 process bed2Tab {
-  
+    container "quay.io/biuocontainers/
+
     input:
       path probes.bed
 
@@ -162,17 +163,18 @@ process bed2Tab {
 }
 
 process hashGene2probe {
+    publishDir params.outputDir, mode: 'copy'
+    container "quay.io/biocontainers/python:latest"
 
     input:
-      path gene2probe
-      path gene2probe.py
+      path tabFile
 
     output:
       path "gene2probe.tsv"
 
     script:
     """
-    python $gene2probe.py ($gene2probe) > gene2probe.tsv
+    python gene2probe.py ($tabFile) > gene2probe.tsv
 
 
 workflow {
@@ -188,13 +190,11 @@ workflow {
 
         // IF Stranded (params.makeCdf == true) 
 
-        // TODO: geneToProbeMapping (output geneToProbeMapping file)
-
 	probeBed = probeGeneIntersect(sam2bam.out, params.gtfFile) 
 
-	gene2probe = bed2Tab(probeBed)
+	gene2probe = bed2Tab(probeGeneIntersect.out)
 
-	geneProbeHash = hashGene2probe(gene2probe,"gene2probe.py")
+	hashGene2probe(bed2Tab.out)
 
 
 //        if(params.makeCdfFile) {
