@@ -143,7 +143,7 @@ process probeGeneIntersect {
 }
 
 process bed2Tab {
-    container "quay.io/biuocontainers/
+    container = 'python:latest'
 
     input:
       path probes.bed
@@ -164,7 +164,7 @@ process bed2Tab {
 
 process hashGene2probe {
     publishDir params.outputDir, mode: 'copy'
-    container "quay.io/biocontainers/python:latest"
+    container "python:latest"
 
     input:
       path tabFile
