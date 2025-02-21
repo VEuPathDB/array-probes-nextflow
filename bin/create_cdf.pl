@@ -41,7 +41,7 @@ ChipReference=
 # and http://www.stat.lsa.umich.edu/~kshedden/Courses/Stat545/Notes/AffxFileFormats/cdf.html
 
 
-open(INFILE, $ARGV[2]);
+open(INFILE, $ARGV[2]) or die "Cannot open file $ARGV[2] for reading: $!";
 while($line = <INFILE>) {
     chomp($line);
     @a = split(/\t/,$line);
@@ -58,11 +58,11 @@ if ($ARGV[3]) {
 else { 
   $minProbes = 3;
      }
-open(OUTFILE, ">>$ARGV[0]");
+open(OUTFILE, ">>$ARGV[0]") or die "Cannot open file $ARGV[0] for appending: $!";
 
 # ARGV[0] is the name of the file with the header above
 
-open(INFILE, "$ARGV[1]");
+open(INFILE, "$ARGV[1]") or die "Cannot open file $ARGV[1] for reading: $!";
 
 # the file mapping genes -> probes
 
@@ -70,7 +70,7 @@ $unit = 1;
 while($line = <INFILE>) {
     chomp($line);
     @a = split(/\t/,$line,2);
-    @probes = split(/\t/,$a[1]);
+    @probes = split(/,/,$a[1]);
     $numprobes = @probes;
     if($numprobes >= $minProbes) {
 	print OUTFILE "[Unit$unit]\n";

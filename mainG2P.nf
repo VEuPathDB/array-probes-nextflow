@@ -128,7 +128,7 @@ process bowtie2Mapping {
 
 process probeGeneIntersect {
     container "quay.io/biocontainers/bedtools:2.27.1--h077b44d_9"
-    
+
     input:
     path probes.bam
     path genome.gff
