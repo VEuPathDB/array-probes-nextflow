@@ -1,13 +1,10 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl=2
 
-if(!params.fastaSubsetSize) {
-  throw new Exception("Missing params.fastaSubsetSize")
-}
 
+// we are not spllitting probes here... to avoid merging complications due to sam file headers
 if(params.probesFastaFile) {
   fastaSubset = Channel.fromPath( params.probesFastaFile )
-           .splitFasta( by:params.fastaSubsetSize, file:true  )
 }
 else {
   throw new Exception("Missing params.probesFastaFile")
@@ -125,12 +122,87 @@ input:
     """ 
 }
 
+process probeGeneIntersect {
+    container "quay.io/biocontainers/bedtools:2.27.1--h077b44d_9"
 
+    input:
+    path probeAlignmentsBam
+    path probeAlignmentsBai
+    path genomeGff
+
+    output:
+    path "probes.bed"
+
+    script:
+    """
+    bedtools intersect -wa -wb -a $probeAlignmentsBam -b $genomeGff -bed > probes.bed
+    """
+}
+
+process bedToGene2Probe {
+    container = 'bioperl/bioperl:stable'
+    publishDir params.outputDir, mode: 'copy'
+
+    input:
+    path bed
+
+    output:
+    path params.outputMappingFileName
+
+    script:
+    """
+    bedToGene2Probe.pl --gtfFeatureType ${task.ext.gtfFeatureType} --bed $bed --geneGtfTag ${task.ext.geneGtfTag} --outputFile ${params.outputMappingFileName}
+    """
+}
+
+
+process cdfFromGene2Probe {
+    container = 'bioperl/bioperl:stable'
+    publishDir params.outputDir, mode: 'copy'
+
+    input:
+    path gene2probes
+    path probesFasta
+    val vendorPath
+
+    output:
+    path vendorPath.name
+
+    script:
+    def vendorFileName = vendorPath.name
+    def vendorBaseName = vendorPath.baseName
+    """
+    makePbaseTbase.pl $probesFasta >pbase-tbase.out
+    makeCdfHeader.pl --outPutFile $vendorFileName --gene2probes $gene2probes --name $vendorBaseName --rows ${params.arrayRows} --cols  ${params.arrayColumns} --minProbes ${task.ext.minProbes}
+    create_cdf.pl $vendorFileName $gene2probes pbase-tbase.out ${task.ext.minProbes}
+    """
+}
+
+process ndfFromGene2Probe {
+    container = 'bioperl/bioperl:stable'
+    publishDir params.outputDir, mode: 'copy'
+
+    input:
+    path gene2probes
+    val vendorPath
+
+    output:
+    path vendorPath.name
+
+    script:
+    def vendorFileName = vendorPath.name
+    """
+    recreate_ndf.pl --original_ndf_file $vendorPath --gene_to_oligo_file $gene2probes --output_file $vendorFileName
+    """
+}
 
 workflow {
+
+    def vendorMappingFile = file(params.vendorMappingFile)
+
     if(params.wantSplicedAlignments) {
 
-        gmapDb = gmapBuild(params.genomeFasta)
+        gmapDb = gmapBuild(params.genomeFastaFile)
 
         iit = makeKnownSpliceSiteFile(params.gtfFile)
 
@@ -138,29 +210,23 @@ workflow {
 
         sam2bam(resultSubset.collectFile(name: "merged.sam"))
 
-        // IF Stranded (params.makeCdf == true) NOTE:  may need to play around with the htseq commands
-        //htseq-count -a 0 --format=bam --order=name --stranded=yes --type=exon --idattr=gene_id --mode=union BAM_FILE params.gtfFile
-        // ELSE
-        // htseq-count -a 0 --format=bam --order=name --stranded=no --type=exon --idattr=gene_id --mode=union BAM_FILE .bam params.gtfFile
+        probeGeneIntersect(sam2bam.out, params.gtfFile)
 
-        // TODO: geneToProbeMapping (output geneToProbeMapping file)
+        bedToGene2Probe(probeGeneIntersect.out)
 
-//        if(params.makeCdfFile) {
-            //$MIN_PROBES=3
-            //my $cmd1 = "makePbaseTbase.pl probes.fsa $workflowDataDir/pbase-tbase.out";
-            //my $cmd2 = "makeCdfHeader.pl  --outPutFile $outputCdfFile --gene2probes $gene2probesFile --name $name --rows params.arrayRows --cols  params.arrayColumns --minProbes $MIN_PROBES";
-            //my $cmd3 = "create_cdf.pl $workflowDataDir/$outputCdfFile $workflowDataDir/$gene2probesInputFile $workflowDataDir/pbase-tbase.out $MIN_PROBES";
-//        }
-//        if(params.makeNdfFile) {
-            // my $cmd = "recreate_ndf.pl --original_ndf_file $workflowDataDir/$ndfFile --gene_to_oligo_file $workflowDataDir/$gene2probesInputFile --output_file $workflowDataDir/$outputFile";
-//        }
+        if(params.makeCdfFile) {
+            cdfFromGene2Probe(bedToGene2Probe.out, params.probesFastaFile, vendorMappingFile)
+        }
 
+        if(params.makeNdfFile) {
+            ndfFromGene2Probe(bedToGene2Probe.out, vendorMappingFile)
+        }
     }
     else {
 
         indexName = "index"
 
-        bowtie2Db = bowtie2Index(params.genomeFasta, indexName)
+        bowtie2Db = bowtie2Index(params.genomeFastaFile, indexName)
 
         bowtieSubset = bowtie2Mapping(fastaSubset, bowtie2Db, indexName)
 
