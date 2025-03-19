@@ -184,15 +184,16 @@ process ndfFromGene2Probe {
 
     input:
     path gene2probes
-    path vendorPath, name: 'vendor.ndf'
+    path vendorPath
 
     output:
-    path vendorPath.name
+    path "output/" + vendorPath.name
 
     script:
     def vendorFileName = vendorPath.name
     """
-    recreate_ndf.pl --original_ndf_file vendor.ndf --gene_to_oligo_file $gene2probes --output_file $vendorFileName
+    mkdir output
+    recreate_ndf.pl --original_ndf_file vendor.ndf --gene_to_oligo_file $gene2probes --output_file output/$vendorFileName
     """
 }
 
