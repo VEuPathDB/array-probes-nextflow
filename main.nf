@@ -185,16 +185,15 @@ process ndfFromGene2Probe {
     input:
     path gene2probes
     val vendorPath
-    path vendorPathPath
+    path stagedVendorPath, stageAs: 'input_files/vendor.ndf'
 
     output:
-    path "output/" + vendorPath.name
+    path vendorPath.name
 
     script:
     def vendorFileName = vendorPath.name
     """
-    mkdir output
-    recreate_ndf.pl --original_ndf_file $vendorPathPath --gene_to_oligo_file $gene2probes --output_file output/$vendorFileName
+    recreate_ndf.pl --original_ndf_file $stagedVendorPath --gene_to_oligo_file $gene2probes --output_file $vendorFileName
     """
 }
 
