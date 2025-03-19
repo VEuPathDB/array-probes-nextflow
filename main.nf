@@ -184,7 +184,7 @@ process ndfFromGene2Probe {
 
     input:
     path gene2probes
-    val vendorPath
+    path vendorPath, name: 'vendor.ndf'
 
     output:
     path vendorPath.name
@@ -192,7 +192,7 @@ process ndfFromGene2Probe {
     script:
     def vendorFileName = vendorPath.name
     """
-    recreate_ndf.pl --original_ndf_file $vendorPath --gene_to_oligo_file $gene2probes --output_file $vendorFileName
+    recreate_ndf.pl --original_ndf_file vendor.ndf --gene_to_oligo_file $gene2probes --output_file $vendorFileName
     """
 }
 
