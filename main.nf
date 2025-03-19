@@ -221,7 +221,7 @@ workflow {
         }
 
         if(params.makeNdfFile) {
-            ndfFromGene2Probe(bedToGene2Probe.out, vendorMappingFile)
+            ndfFromGene2Probe(bedToGene2Probe.out, vendorMappingFile, params.vendorMappingFile)
         }
     }
     else {
