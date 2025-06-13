@@ -58,8 +58,12 @@ process gsnapMapping {
     path "subset.sam"
 
     script:
+    def spliceSiteArgs =  ""
+    if(params.wantSplicedAlignments) {
+        spliceSiteArgs = "-N 1 -s $spliceSiteFile"
+    }
     """
-    gsnap --force-xs-dir --quiet-if-excessive -N 1 -s $spliceSiteFile  -A sam -n ${task.ext.nPaths} -D $gmapDatabase -d $databaseName  $fastaSubset >subset.sam
+    gsnap --force-xs-dir --quiet-if-excessive $spliceSiteArgs  -A sam -n ${task.ext.nPaths} -D $gmapDatabase -d $databaseName  $fastaSubset >subset.sam
     """
 }
 
@@ -201,7 +205,7 @@ workflow {
 
     def vendorMappingFile = file(params.vendorMappingFile)
 
-    if(params.wantSplicedAlignments) {
+    if(params.platformType == "expression") {
 
         gmapDb = gmapBuild(params.genomeFastaFile)
 
