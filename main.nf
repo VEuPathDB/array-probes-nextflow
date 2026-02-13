@@ -144,7 +144,7 @@ process probeGeneIntersect {
 }
 
 process bedToGene2Probe {
-    container = 'bioperl/bioperl:stable'
+    container 'bioperl/bioperl:stable'
     publishDir params.outputDir, mode: 'copy'
 
     input:
@@ -161,7 +161,7 @@ process bedToGene2Probe {
 
 
 process cdfFromGene2Probe {
-    container = 'bioperl/bioperl:stable'
+    container 'bioperl/bioperl:stable'
     publishDir params.outputDir, mode: 'copy'
 
     input:
@@ -183,7 +183,7 @@ process cdfFromGene2Probe {
 }
 
 process ndfFromGene2Probe {
-    container = 'bioperl/bioperl:stable'
+    container 'bioperl/bioperl:stable'
     publishDir params.outputDir, mode: 'copy'
 
     input:
