@@ -2,15 +2,6 @@
 nextflow.enable.dsl=2
 
 
-// we are not spllitting probes here... to avoid merging complications due to sam file headers
-if(params.probesFastaFile) {
-  fastaSubset = Channel.fromPath( params.probesFastaFile )
-}
-else {
-  throw new Exception("Missing params.probesFastaFile")
-}
-
-
 process gmapBuild {
 
     container "quay.io/biocontainers/gmap:2024.11.20--pl5321hb1d24b7_1"
@@ -19,8 +10,8 @@ process gmapBuild {
     path fasta
 
     output:
-    path "gmap_db"
-    val  "gmap_db"
+    path "gmap_db", emit: db
+    val  "gmap_db", emit: name
 
     script:
     """
@@ -78,8 +69,8 @@ process sam2bam {
     path sam
 
     output:
-    path params.outputFileName
-    path params.outputFileName + ".bai"
+    path params.outputFileName, emit: bam
+    path params.outputFileName + ".bai", emit: bai
 
     script:
     """
@@ -203,6 +194,14 @@ process ndfFromGene2Probe {
 
 workflow {
 
+    // we are not spllitting probes here... to avoid merging complications due to sam file headers
+    if(params.probesFastaFile) {
+      fastaSubset = channel.fromPath( params.probesFastaFile )
+    }
+    else {
+      error "Missing params.probesFastaFile"
+    }
+
     def vendorMappingFile = file(params.vendorMappingFile)
 
     if(params.platformType == "expression") {
@@ -211,11 +210,11 @@ workflow {
 
         iit = makeKnownSpliceSiteFile(params.gtfFile)
 
-        resultSubset = gsnapMapping(fastaSubset, iit, gmapDb)
+        resultSubset = gsnapMapping(fastaSubset, iit, gmapDb.db, gmapDb.name)
 
         sam2bam(resultSubset.collectFile(name: "merged.sam"))
 
-        probeGeneIntersect(sam2bam.out, params.gtfFile)
+        probeGeneIntersect(sam2bam.out.bam, sam2bam.out.bai, params.gtfFile)
 
         bedToGene2Probe(probeGeneIntersect.out)
 
